@@ -1,61 +1,99 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+Kampaniya Göndərişi Performans Strategiyası (Indexing & Architecture)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Bu layihə, xüsusilə böyük həcmli e-poçt kampaniyaları ilə işləyərkən yüksək performans, etibarlılıq və təmiz arxitektura tələblərinə cavab vermək üçün qurulmuşdur.
 
-## About Laravel
+**1. İlkin Məlumatların Hazırlanması (Seeding)**
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Layihəni işə saldıqdan sonra verilənlər bazasını hazırlayın və test məlumatlarını yaradın.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Migrasiyaları icra edin:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+php artisan migrate
 
-## Learning Laravel
+Seed məlumatlarını əlavə edin:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+php artisan db:seed
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Qeyd: User və Segment nümunə məlumatları bu addımda yaradılacaq.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+**2. Autentifikasiya (Authentication)**
 
-## Laravel Sponsors
+API-nin əksər endpointləri Bearer Token ilə qorunur. Giriş üçün /login endpoint-indən istifadə edin.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Autentifikasiya Metodu
 
-### Premium Partners
+Başlıq (Header) Formatı
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Bearer Token
 
-## Contributing
+Authorization: Bearer <token_dəyəri>
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+3. Nümunə API Çağırışları (cURL Examples)
 
-## Code of Conduct
+Əsas funksionallıq üçün nümunə çağırışlar (fərz edilir ki, uğurlu giriş nəticəsində TOKEN əldə olunub).
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+3.1. Giriş (Token Əldə Etmə)
 
-## Security Vulnerabilities
+Sizin API-nizin /login endpoint-inə POST sorğusu
+curl -X POST "http://localhost:8000/api/v1/login"
+-H "Content-Type: application/json"
+-d '{ "email": "testuser@example.com", "password": "password" }'
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Nəticədə Token əldə ediləcək.
+** 4. Təmiz Arxitektura Təbəqələşməsi**
 
-## License
+Layihə Təmiz Lay (Clean Layering) prinsiplərinə əsaslanır:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Controller/Konsol: İlkin sorğunu alır, Service təbəqəsini çağırır.
+
+Service (SegmentService): Biznes məntiqini ehtiva edir (məsələn, istifadəçilərin seqmentlərə görə filtrlənməsi).
+
+Repository (CampaignRepository, UserRepository): Verilənlərin çəkilməsi və saxlanması məntiqini Model (Eloquent) siniflərindən ayırır.
+
+Model: Yalnız DB strukturlarını təmsil edir. ** 5. Mail Bütünlüyü və Performans Təkmilləşdirmələri**
+
+Bhunk və N+1 Həlli
+
+N+1 Qaçınma: SendCampaignEmailsJob daxilindəki istifadəçi filtrləməsi (abonelikdən çıxma və əvvəlcədən göndərilmə yoxlamaları) whereIn sorğuları vasitəsilə həyata keçirilir. Bu, hər bir istifadəçi üçün fərdi DB sorğusu atmaq (N+1) əvəzinə, hər bir 2000 istifadəçi bloku üçün yalnız iki sorğuya endirilmişdir. Bu, performans üçün KRİTİK FAKTORDUR.
+
+Chunking: chunkById(2000, ...) istifadə edilməsi əsas Job-un DB əlaqəsinin vaxt aşımına uğramasının qarşısını alır və böyük cədvəllərdə OFFSET istifadəsindən daha sürətli işləyir.
+
+Mail Boru Xətti Konfiqurasiyası Nümunədə class sabitləri kimi verilib:
+
+6. İndeksləmə Strategiyası (DB Səmərəliliyi)
+
+Aşağıdakı cədvəllərdə müvafiq indekslərin təmin edilməsi, Job-ların icra müddətini və ümumi verilənlər bazası yükünü minimuma endirmək üçün əsas şərtdir.
+
+Cədvəl
+
+Təklif Edilən İndekslər
+
+Əsaslandırma
+
+users
+
+id (Primary Key)
+
+chunkById funksiyası üçün mütləqdir.
+
+user_unsubscribed
+
+user_id (Birlikdə)
+
+SendCampaignEmailsJob daxilindəki whereIn('user_id', ...) sorğusunun sürətli icrası üçün.
+
+campaign_user_sent
+
+campaign_id, user_id
+
+TƏRKİBİ İNDEKSLƏMƏ (Composite Index): (campaign_id, user_id) birləşməsi üzrə unikal indeks olmalıdır. Bu, həm exists() yoxlamasını, həm də DB::count() sorğusunu yüksək sürətlə yerinə yetirməyi təmin edir.
+
+campaigns
+
+id (Primary Key)
+
+CampaignRepository tərəfindən find əməliyyatlarının sürətli olması üçün.
+
+{"email_verified":true,"marketing_opt_in":true,"purchased":{"category":"electronics"}}
+
+public/docs/swagger.yaml
