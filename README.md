@@ -1,4 +1,4 @@
-Kampaniya Göndərişi Performans Strategiyası (Indexing & Architecture)
+Kampaniya Göndərişi & Performans Strategiyası (Indexing & Architecture)
 
 Bu layihə, xüsusilə böyük həcmli e-poçt kampaniyaları ilə işləyərkən yüksək performans, etibarlılıq və təmiz arxitektura tələblərinə cavab vermək üçün qurulmuşdur.
 
