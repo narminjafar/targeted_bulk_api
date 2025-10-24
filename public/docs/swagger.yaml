@@ -1,0 +1,530 @@
+openapi: 3.0.0
+info:
+  title: Marketing APIs
+  description: Marketing kampaniyaları və segment idarəetmə API-si
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Production server
+  - url: http://localhost:8000/api/v1
+    description: Development server
+
+tags:
+  - name: Auth
+    description: Autentifikasiya əməliyyatları
+  - name: Segments
+    description: Müştəri seqmentləri idarəetməsi
+  - name: Campaigns
+    description: Marketing kampaniyaları idarəetməsi
+
+paths:
+  /register:
+    post:
+      tags:
+        - Auth
+      summary: Yeni istifadəçi qeydiyyatı
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                  example: "Aylin M."
+                email:
+                  type: string
+                  format: email
+                  example: "aylin1@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "secret123"
+      responses:
+        '201':
+          description: Uğurlu qeydiyyat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          description: Validasiya xətası
+
+  /login:
+    post:
+      tags:
+        - Auth
+      summary: İstifadəçi girişi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "aylin@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "secret123"
+      responses:
+        '200':
+          description: Uğurlu giriş
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Yanlış email və ya şifrə
+
+  /segments:
+    get:
+      tags:
+        - Segments
+      summary: Bütün seqmentlərin siyahısı
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 15
+          example: 4
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          example: 2
+      responses:
+        '200':
+          description: Uğurlu cavab
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Segment'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          description: Autentifikasiya tələb olunur
+
+    post:
+      tags:
+        - Segments
+      summary: Yeni seqment yarat
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - filter_json
+              properties:
+                name:
+                  type: string
+                  example: "Example Segment"
+                filter_json:
+                  type: object
+                  description: Seqment filtr şərtləri
+                  properties:
+                    email_verified:
+                      type: boolean
+                    marketing_opt_in:
+                      type: boolean
+                    registered_between:
+                      type: array
+                      items:
+                        type: string
+                        format: date
+                      example: ["2025-01-01", "2025-10-01"]
+                    last_active_days:
+                      type: integer
+                      example: 30
+                    purchased:
+                      type: object
+                      properties:
+                        category:
+                          type: string
+                          example: "laptops"
+                        price_between:
+                          type: array
+                          items:
+                            type: number
+                          example: [500, 2000]
+                        stock_below:
+                          type: integer
+                          example: 10
+                    wishlisted:
+                      type: object
+                      properties:
+                        category:
+                          type: string
+                          example: "smartphones"
+                        price_between:
+                          type: array
+                          items:
+                            type: number
+                          example: [100, 1000]
+                        stock_below:
+                          type: integer
+                          example: 5
+      responses:
+        '201':
+          description: Seqment yaradıldı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Segment'
+        '422':
+          description: Validasiya xətası
+
+  /segments/{id}:
+    get:
+      tags:
+        - Segments
+      summary: Seqmentin detalları
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 7
+      responses:
+        '200':
+          description: Uğurlu cavab
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Segment'
+        '404':
+          description: Seqment tapılmadı
+
+  /segments/{id}/preview:
+    get:
+      tags:
+        - Segments
+      summary: Seqment üzvlərinin önizləməsi
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 8
+      responses:
+        '200':
+          description: Seqment üzvləri
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_count:
+                    type: integer
+                  preview:
+                    type: array
+                    items:
+                      type: object
+
+  /campaigns:
+    get:
+      tags:
+        - Campaigns
+      summary: Kampaniyaların siyahısı
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, scheduled, sent, failed]
+          example: "draft"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Uğurlu cavab
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Campaign'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+    post:
+      tags:
+        - Campaigns
+      summary: Yeni kampaniya yarat
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          schema:
+            type: string
+            format: uuid
+          example: "4dc3370a-9f50-4df5-8197-73a0489cf9e7"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - subject
+                - template_key
+                - segment_id
+                - content
+              properties:
+                subject:
+                  type: string
+                  example: "Back to stock!"
+                template_key:
+                  type: string
+                  example: "promo_a"
+                segment_id:
+                  type: integer
+                  example: 7
+                content:
+                  type: string
+                  example: "sdfdfsdf"
+      responses:
+        '201':
+          description: Kampaniya yaradıldı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '422':
+          description: Validasiya xətası
+
+  /campaigns/{id}:
+    get:
+      tags:
+        - Campaigns
+      summary: Kampaniyanın detalları
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Uğurlu cavab
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '404':
+          description: Kampaniya tapılmadı
+
+  /campaigns/{id}/stats:
+    get:
+      tags:
+        - Campaigns
+      summary: Kampaniya statistikası
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Kampaniya statistikası
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  campaign:
+                    $ref: '#/components/schemas/Campaign'
+                  stats:
+                    type: object
+                    properties:
+                      sent:
+                        type: integer
+                      delivered:
+                        type: integer
+                      opened:
+                        type: integer
+                      clicked:
+                        type: integer
+                      bounced:
+                        type: integer
+                      unsubscribed:
+                        type: integer
+
+  /campaigns/{id}/queue:
+    post:
+      tags:
+        - Campaigns
+      summary: Kampaniyanı göndərmə növbəsinə əlavə et
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 8
+      responses:
+        '200':
+          description: Kampaniya növbəyə əlavə edildi
+        '400':
+          description: Kampaniya artıq göndərilib və ya növbədədir
+
+  /unsubscribe/{userId}/{campaignId}:
+    get:
+      tags:
+        - Campaigns
+      summary: İstifadəçini abunəlikdən çıxart
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 614
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 8
+        - name: signature
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "442e4376ce7c22e33dd844d60d62beacda7dc7b985851e9062e4d8efc90af56d"
+      responses:
+        '200':
+          description: Abunəlikdən uğurla çıxarıldınız
+        '400':
+          description: Yanlış imza
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT access token
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            email:
+              type: string
+
+    Segment:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        filter_json:
+          type: object
+        member_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: integer
+        subject:
+          type: string
+        template_key:
+          type: string
+        segment_id:
+          type: integer
+        content:
+          type: string
+        status:
+          type: string
+          enum: [draft, scheduled, sent, failed]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        last_page:
+          type: integer

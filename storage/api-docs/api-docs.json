@@ -1,0 +1,977 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Marketing APIs",
+        "description": "Marketing kampaniyaları və segment idarəetmə API-si",
+        "contact": {
+            "email": "support@example.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000/api/v1",
+            "description": "API Server"
+        }
+    ],
+    "paths": {
+        "/register": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Yeni istifadəçi qeydiyyatı",
+                "description": "İstifadəçi adı, email və şifrə ilə qeydiyyatdan keçir və JWT token qaytarır.",
+                "operationId": "register",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "İstifadəçinin tam adı",
+                                        "type": "string",
+                                        "example": "Aylin M."
+                                    },
+                                    "email": {
+                                        "description": "Unikal email ünvanı",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "aylin1@example.com"
+                                    },
+                                    "password": {
+                                        "description": "Şifrə (minimum 6 simvol)",
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 6,
+                                        "example": "secret123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Uğurlu qeydiyyat",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "token": {
+                                            "type": "string",
+                                            "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Aylin M."
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "aylin1@example.com"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasiya xətası",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The email has already been taken."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "email": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The email has already been taken."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "İstifadəçi girişi",
+                "description": "Email və şifrə ilə sistemə giriş edib JWT token əldə edin.",
+                "operationId": "login",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "aylin@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Uğurlu giriş",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "token": {
+                                            "type": "string",
+                                            "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "email": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Yanlış email və ya şifrə",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid credentials"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/segments": {
+            "get": {
+                "tags": [
+                    "Segments"
+                ],
+                "summary": "Bütün seqmentlərin siyahısı",
+                "description": "Pagination ilə seqmentlərin siyahısını gətirir.",
+                "operationId": "getSegments",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Hər səhifədə göstəriləcək element sayı",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1,
+                            "example": 4
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Səhifə nömrəsi",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1,
+                            "example": 2
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Uğurlu cavab",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 7
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Example Segment"
+                                                    },
+                                                    "filter_json": {
+                                                        "type": "object"
+                                                    },
+                                                    "member_count": {
+                                                        "type": "integer",
+                                                        "example": 150
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 4
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 50
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 13
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Autentifikasiya tələb olunur",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Segments"
+                ],
+                "summary": "Yeni seqment yarat",
+                "description": "Filtr şərtləri ilə yeni müştəri seqmenti yaradır.",
+                "operationId": "createSegment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "filter_json"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Example Segment"
+                                    },
+                                    "filter_json": {
+                                        "properties": {
+                                            "email_verified": {
+                                                "type": "boolean",
+                                                "example": true
+                                            },
+                                            "marketing_opt_in": {
+                                                "type": "boolean",
+                                                "example": true
+                                            },
+                                            "registered_between": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string",
+                                                    "format": "date"
+                                                },
+                                                "example": [
+                                                    "2025-01-01",
+                                                    "2025-10-01"
+                                                ]
+                                            },
+                                            "last_active_days": {
+                                                "type": "integer",
+                                                "example": 30
+                                            },
+                                            "purchased": {
+                                                "properties": {
+                                                    "category": {
+                                                        "type": "string",
+                                                        "example": "laptops"
+                                                    },
+                                                    "price_between": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "number"
+                                                        },
+                                                        "example": [
+                                                            500,
+                                                            2000
+                                                        ]
+                                                    },
+                                                    "stock_below": {
+                                                        "type": "integer",
+                                                        "example": 10
+                                                    }
+                                                },
+                                                "type": "object"
+                                            },
+                                            "wishlisted": {
+                                                "properties": {
+                                                    "category": {
+                                                        "type": "string",
+                                                        "example": "smartphones"
+                                                    },
+                                                    "price_between": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "number"
+                                                        },
+                                                        "example": [
+                                                            100,
+                                                            1000
+                                                        ]
+                                                    },
+                                                    "stock_below": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Seqment yaradıldı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Example Segment"
+                                        },
+                                        "filter_json": {
+                                            "type": "object"
+                                        },
+                                        "member_count": {
+                                            "type": "integer",
+                                            "example": 0
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasiya xətası"
+                    },
+                    "401": {
+                        "description": "Autentifikasiya tələb olunur"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/segments/{id}": {
+            "get": {
+                "tags": [
+                    "Segments"
+                ],
+                "summary": "Seqmentin detalları",
+                "description": "ID-yə görə seqmentin tam məlumatını gətirir.",
+                "operationId": "getSegment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Seqment ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 7
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Uğurlu cavab"
+                    },
+                    "404": {
+                        "description": "Seqment tapılmadı"
+                    },
+                    "401": {
+                        "description": "Autentifikasiya tələb olunur"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/segments/{id}/preview": {
+            "get": {
+                "tags": [
+                    "Segments"
+                ],
+                "summary": "Seqment üzvlərinin önizləməsi",
+                "description": "Seqmentə uyğun gələn istifadəçilərin siyahısını göstərir.",
+                "operationId": "previewSegment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 8
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Seqment üzvləri",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "total_count": {
+                                            "type": "integer",
+                                            "example": 150
+                                        },
+                                        "preview": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "email": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Seqment tapılmadı"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/campaigns": {
+            "get": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "Kampaniyaların siyahısı",
+                "description": "Filter və pagination ilə kampaniyaları gətirir.",
+                "operationId": "getCampaigns",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Kampaniya statusuna görə filtr",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "scheduled",
+                                "sent",
+                                "failed"
+                            ],
+                            "example": "draft"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "example": 2
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Uğurlu cavab"
+                    },
+                    "401": {
+                        "description": "Autentifikasiya tələb olunur"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "Yeni kampaniya yarat",
+                "description": "Idempotency-Key header ilə dublikat yaranmanı qarşısını alır.",
+                "operationId": "createCampaign",
+                "parameters": [
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "description": "Unikal key dublikat yaranmanın qarşısını alır",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "4dc3370a-9f50-4df5-8197-73a0489cf9e7"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "subject",
+                                    "template_key",
+                                    "segment_id",
+                                    "content"
+                                ],
+                                "properties": {
+                                    "subject": {
+                                        "type": "string",
+                                        "example": "Back to stock!"
+                                    },
+                                    "template_key": {
+                                        "type": "string",
+                                        "example": "promo_a"
+                                    },
+                                    "segment_id": {
+                                        "type": "integer",
+                                        "example": 7
+                                    },
+                                    "content": {
+                                        "type": "string",
+                                        "example": "Email məzmunu..."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Kampaniya yaradıldı",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "subject": {
+                                            "type": "string"
+                                        },
+                                        "template_key": {
+                                            "type": "string"
+                                        },
+                                        "segment_id": {
+                                            "type": "integer"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "draft"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasiya xətası"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/campaigns/{id}": {
+            "get": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "Kampaniyanın detalları",
+                "operationId": "getCampaign",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Uğurlu cavab"
+                    },
+                    "404": {
+                        "description": "Kampaniya tapılmadı"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/campaigns/{id}/stats": {
+            "get": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "Kampaniya statistikası",
+                "operationId": "getCampaignStats",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Kampaniya statistikası",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "campaign": {
+                                            "type": "object"
+                                        },
+                                        "stats": {
+                                            "properties": {
+                                                "sent": {
+                                                    "type": "integer",
+                                                    "example": 1000
+                                                },
+                                                "delivered": {
+                                                    "type": "integer",
+                                                    "example": 980
+                                                },
+                                                "opened": {
+                                                    "type": "integer",
+                                                    "example": 450
+                                                },
+                                                "clicked": {
+                                                    "type": "integer",
+                                                    "example": 120
+                                                },
+                                                "bounced": {
+                                                    "type": "integer",
+                                                    "example": 20
+                                                },
+                                                "unsubscribed": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/campaigns/{id}/queue": {
+            "post": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "Kampaniyanı növbəyə əlavə et",
+                "description": "Kampaniyanı göndərmə növbəsinə əlavə edir.",
+                "operationId": "queueCampaign",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 8
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Kampaniya növbəyə əlavə edildi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Campaign queued successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Kampaniya artıq göndərilib"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/unsubscribe/{userId}/{campaignId}": {
+            "get": {
+                "tags": [
+                    "Campaigns"
+                ],
+                "summary": "Abunəlikdən çıxma",
+                "description": "İmza ilə təsdiqlənmiş unsubscribe linki.",
+                "operationId": "unsubscribe",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 614
+                        }
+                    },
+                    {
+                        "name": "campaignId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 8
+                        }
+                    },
+                    {
+                        "name": "signature",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "442e4376ce7c22e33dd844d60d62beacda7dc7b985851e9062e4d8efc90af56d"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Abunəlikdən uğurla çıxarıldınız",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Yanlış imza"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "Auth"
+        },
+        {
+            "name": "Segments",
+            "description": "Segments"
+        },
+        {
+            "name": "Campaigns",
+            "description": "Campaigns"
+        }
+    ]
+}
