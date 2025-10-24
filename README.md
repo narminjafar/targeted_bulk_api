@@ -16,7 +16,7 @@ php artisan db:seed
 
 Qeyd: User və Segment nümunə məlumatları bu addımda yaradılacaq.
 
-Daha sonra php artisan serve  ve **/api/documentation **
+Daha sonra php artisan serve  ve **/docs **
 
 **2. Autentifikasiya (Authentication)**
 
