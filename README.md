@@ -16,9 +16,11 @@ php artisan db:seed
 
 Qeyd: User və Segment nümunə məlumatları bu addımda yaradılacaq.
 
+Daha sonra php artisan serve  ve **/api/documentation **
+
 **2. Autentifikasiya (Authentication)**
 
-API-nin əksər endpointləri Bearer Token ilə qorunur. Giriş üçün /login endpoint-indən istifadə edin.
+API-nin əksər endpointləri Bearer Token ilə qorunur. Giriş üçün /login endpoint-indən istifadə edin.   
 
 Autentifikasiya Metodu
 
@@ -96,4 +98,4 @@ CampaignRepository tərəfindən find əməliyyatlarının sürətli olması ü�
 
 {"email_verified":true,"marketing_opt_in":true,"purchased":{"category":"electronics"}}
 
-public/docs/swagger.yaml
+**public/docs/swagger.yaml**
